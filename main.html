@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>title</title>
+<style>* { padding: 0; margin: 0; } canvas { background: #eee; display: block; margin: 0 auto; }</style>
+</head>
+<body>
+
+<canvas id="myCanvas" width="600" height="400"></canvas>
+
+<script>
+
+class Ball {
+	constructor(can_width, can_height) {
+		this.ballRadius = 10;
+		this.x = canvas.width/2;
+		this.y = canvas.height-30;
+		this.dx = 20;
+		this.dy = -20;
+
+		this.time = 1;
+
+		this.can_width = can_width;
+		this.can_height = can_height;
+
+		this.child = []
+	}
+
+	draw(ctx) {
+		this.drawChildLine(ctx);
+
+		ctx.beginPath();
+		ctx.arc(this.x, this.y, this.ballRadius, 0, Math.PI*2);
+		ctx.fillStyle = "#0095DD";
+		ctx.fill();
+		ctx.closePath();
+	}
+
+	deleteChildLine(ctx) {
+		for(let j=0;j<this.child.length;j++) {
+			this.child.shift();
+			for(let i=1;i<this.child.length;i++) {
+				ctx.beginPath();
+				ctx.lineWidth = 2;
+				ctx.strokeStyle = "#FFAAAA";
+				ctx.moveTo(this.child[i-1].x, this.child[i-1].y);
+				ctx.lineTo(this.child[i].x, this.child[i].y);
+				ctx.stroke();
+				ctx.closePath();
+			}
+		}
+	}
+
+	drawChildCircle(ctx) {
+		if(this.child.length > 50)
+			this.child.shift();
+
+		for(let i=0;i<this.child.length;i++) {
+			ctx.beginPath();
+			ctx.arc(this.child[i].x, this.child[i].y, this.ballRadius-8, 0, Math.PI*2);
+			ctx.fillStyle = "#FFAAAA";
+			ctx.fill();
+			ctx.closePath();
+		}
+	}
+
+	drawChildLine(ctx) {
+		if(this.child.length > 50)
+			this.child.shift();
+
+		for(let i=1;i<this.child.length;i++) {
+			ctx.beginPath();
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = "#FFAAAA";
+			ctx.moveTo(this.child[i-1].x, this.child[i-1].y);
+			ctx.lineTo(this.child[i].x, this.child[i].y);
+			ctx.stroke();
+			ctx.closePath();
+		}
+	}
+
+	slow() {
+		this.dx = 0.2;
+		this.dy = -0.2;
+	}
+
+	fast() {
+		this.dx = 20;
+		this.dy = -20;
+	}
+
+	switch_time() {
+		if(this.time == 1) {
+			this.time = 0;
+			this.slow()
+		}
+		else if(this.time == 0) {
+			this.time = 1;
+			this.fast();
+		}
+	}
+
+
+	move() {
+		if(this.x + this.dx > this.can_width - this.ballRadius || this.x + this.dx < this.ballRadius) {
+			this.dx = -this.dx;
+		}
+		if(this.y + this.dy < this.ballRadius) {
+			this.dy = -this.dy;
+		} else if(this.y + this.dy > this.can_height-this.ballRadius) {
+			if(this.x > paddle.x && this.x < paddle.x + paddle.width) {
+				this.dy = -this.dy;
+			} else {
+				this.x = this.can_width/2;
+				this.y = this.can_height-30;
+				this.dx = 0;
+				this.dy = 0;
+				return false;
+			}
+		}
+
+		this.child.push({x:this.x, y:this.y});
+		this.x += this.dx;
+		this.y += this.dy;
+		return true;
+	}
+
+}
+
+
+class Paddle {
+	constructor(can_width, can_height) {
+		this.height = 10;
+		this.width = 100;
+		this.x = (can_width - this.width)/2;
+		this.can_width = can_width;
+		this.can_height = can_height;
+	}
+
+	draw(ctx) {
+		ctx.beginPath();
+		ctx.rect(this.x, this.can_height-this.height, this.width, this.height);
+		ctx.fillStyle = "#0095DD";
+		ctx.fill();
+		ctx.closePath();
+	}
+
+	reset() {
+		this.x = (this.can_width - this.width)/2;
+	}
+}
+
+class Stage {
+	constructor(row, column) {
+		this.blockWidth = 30;
+		this.blockHeight = 30;
+		this.row = row;
+		this.column = column;
+		this.blockPadding = 1;
+		this.blockOffsetTop = 30;
+		this.blockOffsetLeft = 6;
+		this.blocks = [];
+
+		for(var c=0; c<this.column; c++) {
+			this.blocks[c] = [];
+			for(var r=0; r<this.row; r++) {
+				this.blocks[c][r] = { x: 0, y: 0 , status: 1};
+			}
+		}
+	}
+
+	draw(ctx) {
+		for(var c=0; c<this.column; c++) {
+			for(var r=0; r<this.row; r++) {
+				if(this.blocks[c][r].status == 1) {
+					var blockX = (r*(this.blockWidth+this.blockPadding))+this.blockOffsetLeft;
+					var blockY = (c*(this.blockHeight+this.blockPadding))+this.blockOffsetTop;
+					this.blocks[c][r].x = blockX;
+					this.blocks[c][r].y = blockY;
+
+					ctx.beginPath();
+					ctx.rect(blockX, blockY, this.blockWidth, this.blockHeight);
+					ctx.fillStyle = "#0095DD";
+					ctx.fill();
+					ctx.closePath();
+				}
+			}
+		}
+	}
+
+	collisiondetection(ball) {
+		var flag = false;
+		for(var c=0; c<this.column; c++) {
+			for(var r=0; r<this.row; r++) {
+				var b = this.blocks[c][r];
+				if(b.status == 1) {
+					if(ball.x > b.x && ball.x < b.x + this.blockWidth && ball.y > b.y && ball.y < b.y + this.blockHeight) {
+						ball.dy = -ball.dy;
+						b.status = 0;
+						flag = true;
+					}
+				}
+			}
+		}
+		return flag;
+	}
+
+}
+
+class Score {
+	constructor(num) {
+		this.score = 0;
+		this.num = num;
+	}
+
+	plus() {
+		this.score += this.num;
+	}
+
+	draw(ctx) {
+		ctx.font = "16px Arial";
+		ctx.fillStyle = "#0095DD";
+		ctx.fillText("Score: "+this.score, 8, 20);
+	}
+}
+
+function drawLives(ctx) {
+	ctx.font = "16px Arial";
+	ctx.fillStyle = "#0095DD";
+	ctx.fillText("Lives: "+lives, canvas.width-65, 20);
+}
+
+function mouseMoveHandler(e) {
+	var relativeX = e.clientX - canvas.offsetLeft;
+	if(relativeX > 0 && relativeX < canvas.width) {
+		paddle.x = relativeX - paddle.width/2;
+	}
+}
+
+
+
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
+
+document.addEventListener("mousemove", mouseMoveHandler, false);
+
+stage = new Stage(19,5);
+paddle = new Paddle(canvas.width, canvas.height);
+score = new Score(10);
+ball = new Ball(canvas.width, canvas.height);
+
+count = 0;
+var lives = 3;
+
+function draw() {
+
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	stage.draw(ctx);
+	ball.draw(ctx);
+
+	paddle.draw(ctx);
+	score.draw(ctx);
+	drawLives(ctx);
+
+	if(ball.move() != true) {
+		lives --;
+		paddle.reset();
+		ball.deleteChildLine(ctx);
+	}
+
+	if(stage.collisiondetection(ball))
+		score.plus();
+
+	if(lives == 0) {
+		alert("GAME OVER");
+		document.location.reload();
+	}
+
+	if(count % 50 == 0) {
+		ball.switch_time();
+		count = 0;
+	}
+
+	count += 1;
+	requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>
