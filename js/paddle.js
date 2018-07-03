@@ -1,11 +1,10 @@
-
 class Paddle {
-	constructor(can_width, can_height) {
+	constructor(canWidth, canHeight) {
 		this.height = 10;
 		this.width = 100;
-		this.x = (can_width - this.width)/2;
-		this.can_width = can_width;
-		this.can_height = can_height;
+		this.x = (canWidth - this.width)/2;
+		this.canWidth = canWidth;
+		this.canHeight = canHeight;
 
 		this.sX = null; // 始点Ｓのx座標（スクリーン座標）
 		this.sY = null; // 始点Ｓのy座標（スクリーン座標）
@@ -13,6 +12,7 @@ class Paddle {
 		this.eY = null; // 終点Ｅのy座標（スクリーン座標）
 		this.mouseX; // ドラッグされている位置のx座標
 		this.mouseY; // ドラッグされている位置のy座標
+		this.lineWidth = 15;
 	}
 
 	draw(ctx) {
@@ -20,11 +20,11 @@ class Paddle {
 		this.drawTempPoint();
 		this.drawEndPoint();
 
-//		ctx.beginPath();
-//		ctx.rect(this.x, this.can_height-this.height, this.width, this.height);
-//		ctx.fillStyle = "#0095DD";
-//		ctx.fill();
-//		ctx.closePath();
+		//		ctx.beginPath();
+		//		ctx.rect(this.x, this.canHeight-this.height, this.width, this.height);
+		//		ctx.fillStyle = "#0095DD";
+		//		ctx.fill();
+		//		ctx.closePath();
 	}
 
 
@@ -71,9 +71,66 @@ class Paddle {
 	drawEndPoint() {
 		if (this.sX != null && this.sY != null && this.eX != null && this.eY != null) {
 			this.drawPoint(this.eX, this.eY, '#000');
-			this.drawLine(this.sX, this.sY, this.eX, this.eY, '#000', 20);
+			this.drawLine(this.sX, this.sY, this.eX, this.eY, '#000', this.lineWidth);
 		}
 	}
-}
 
+	calcMouseCoordinate(e) {
+		// クリック位置の座標計算（canvasの左上を基準。-2ずつしているのはborderの分）
+		var rect = e.target.getBoundingClientRect();
+		this.mouseX = e.clientX - Math.floor(rect.left) - 2;
+		this.mouseY = e.clientY - Math.floor(rect.top) - 2;
+	}
+
+	onmousedown(e) {
+		// クリック位置のスクリーン座標（mouseX, mouseY）を取得
+		this.calcMouseCoordinate(e);
+		// 始点、終点のスクリーン座標を設定（終点はクリア）
+		this.sX = this.mouseX;
+		this.sY = this.mouseY;
+		this.eX = null;
+		this.eY = null;
+	}
+
+	onmouseup(e) {
+		// クリック位置のスクリーン座標（mouseX, mouseY）を取得
+		this.calcMouseCoordinate(e);
+		// 終点のスクリーン座標を設定
+		this.eX = this.mouseX;
+		this.eY = this.mouseY;
+	}
+
+	onmouseout(e) {
+		// 始点・終点が共に確定していなければ、一旦クリア
+		if (this.sX == null || this.sY == null || this.eX == null || this.eY == null) {
+			this.sX = null;
+			this.sY = null;
+			this.eX = null;
+			this.eY = null;
+		}
+	}
+
+	getPoints() {
+		if (this.sX == null || this.sY == null || this.eX == null || this.eY == null)
+			return null;
+		else  {
+			let x1 = this.sX;
+			let y1 = this.sY;
+			let x2 = this.eX;
+			let y2 = this.eY;
+
+			if(this.sX > this.eX) {
+				x1 = this.eX;
+				y1 = this.eY;
+				x2 = this.sX;
+				y2 = this.sY;
+			}
+
+			return [{x:x1, y:y1-this.lineWidth/2}, {x:x2,y:y2-this.lineWidth/2}, {x:x2, y:y2+this.lineWidth/2}, {x:x1, y:y2+this.lineWidth/2}];
+
+		}
+	}
+
+
+}
 
