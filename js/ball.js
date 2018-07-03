@@ -2,11 +2,12 @@ class Ball {
 	constructor(canWidth, canHeight) {
 		this.r = 10;
 		this.x = canvas.width/2;
-		this.y = canvas.height - 260;
-		this.dx = 20;
-		this.dy = 20;
-		this.speed = 2;
-		this.time = 1;
+		this.y = canvas.height - 180;
+		this.dx = 0.1;
+		this.dy = 0.1;
+		this.speed = 22;
+		this.slowSpeed = 0.1;
+		this.slowFlag = true;
 		this.canWidth = canWidth;
 		this.canHeight = canHeight;
 		this.child = []
@@ -35,7 +36,7 @@ class Ball {
 	}
 
 	drawChildLine(ctx) {
-		if(this.child.length > 50)
+		if(this.child.length > 100)
 			this.child.shift();
 		for(let i=1;i<this.child.length;i++) {
 			ctx.beginPath();
@@ -49,44 +50,31 @@ class Ball {
 	}
 
 	slow() {
+		this.slowFlag = true;
 		if(this.dx > 0)
-			this.dx = 0.1;
+			this.dx = this.slowSpeed;
 		else if(this.dx < 0)
-			this.dx = -0.1;
+			this.dx = -this.slowSpeed;
 		if(this.dy > 0)
-			this.dy = 0.1;
+			this.dy = this.slowSpeed;
 		else if(this.dy < 0)
-			this.dy = -0.1;
-
+			this.dy = -this.slowSpeed;
 	}
 
 	fast() {
+		this.slowFlag = false;
 		if(this.dx > 0)
-			this.dx = 20;
+			this.dx = this.speed;
 		else if(this.dx < 0)
-			this.dx = -20;
+			this.dx = -this.speed;
 		if(this.dy > 0)
-			this.dy = 20;
+			this.dy = this.speed;
 		else if(this.dy < 0)
-			this.dy = -20;
-	}
-
-	switch_time() {
-		if(this.time == 1) {
-			this.time = 0;
-			this.slow()
-		}
-		else if(this.time == 0) {
-			this.time = 1;
-			this.fast();
-		}
+			this.dy = -this.speed;
 	}
 
 	move(blocks, paddle, score) {
 		this.child.push({x:this.x, y:this.y});
-
-		if(this.collisiondetection(blocks, score))
-			score.plus();
 
 		if(this.x + this.dx > this.canWidth-this.r|| this.x + this.dx < this.r) {
 			this.dx = -this.dx;
@@ -95,20 +83,33 @@ class Ball {
 			this.dy = -this.dy;
 		} else if(this.y + this.dy > this.canHeight-this.r) {
 			this.x = canvas.width/2;
-			this.y = canvas.height - 260;
+			this.y = canvas.height - 180;
 			this.dx = 0.1;
 			this.dy = 0.1;
 			return false;
 		}
 		else {
 			this.paddleDetection(paddle);
+			if(this.collisiondetection(blocks))
+				score.plus();
 		}
 		this.x += this.dx;
 		this.y += this.dy;
+
+		if(this.slowCheck(paddle)) {
+			this.slow();
+		} else {
+			this.fast();
+		}
+
 		return true;
 	}
 
-	collisiondetection(blocks) {
+	getDistancePoints(point1, point2) {
+		return Math.sqrt( (point1.x-point2.x) * (point1.x-point2.x) + (point1.y-point2.y) * (point1.y-point2.y));
+	}
+collisiondetection(blocks) {
+		let minBlock = {distance:9999, c:0, r:0};
 		let flag = false;
 		for(let c=0; c<blocks.length; c++) {
 			for(let r=0; r<blocks[0].length; r++) {
@@ -123,48 +124,102 @@ class Ball {
 							pi2 = pi+1;
 
 						if(this.checkPointAndCircle(points[pi])){
-							const random = Math.floor(Math.random() * 2);
-							if(random == 0)
-								this.dy = -this.dy;
-							else if(random == 1)
-								this.dx = -this.dx;
-							b.status = 0;
-							flag = true;
-						}
-						else if(this.getDistancePointAndLine(points[pi], points[pi2]) < this.r) {
-							if(pi == 0 || pi == 2)
-								this.dy = -this.dy;
-							if(pi == 1 || pi == 3)
-								this.dx = -this.dx;
-							b.status = 0;
-							flag = true;
+							if(minBlock.distance > this.getDistancePoints({x:b.x + b.width/2, y:b.y + b.height/2}, {x:this.x, y:this.y})){
+								minBlock.distance = this.getDistancePoints({x:b.x + b.width/2, y:b.y + b.height/2}, {x:this.x, y:this.y});
+								minBlock.c = c;
+								minBlock.r = r;
+								const random = Math.floor(Math.random() * 2);
+								if(random == 0)
+									this.dy = -this.dy;
+								else if(random == 1)
+									this.dx = -this.dx;
+								flag = true;
+							}
+//						}
+//						else if(this.getDistancePointAndLine(points[pi], points[pi2]) < this.r) {
+//							if(pi == 0 || pi == 2)
+//								this.dy = -this.dy;
+//							if(pi == 1 || pi == 3)
+//								this.dx = -this.dx;
+//							b.status = 0;
+//							return true;
+						} else if(this.judgeIentersected(points[pi].x, points[pi].y, points[pi2].x, points[pi2].y, this.x, this.y, this.x + this.dx, this.y + this.dy)) {
+							if(minBlock.distance > this.getDistancePoints({x:b.x + b.width/2, y:b.y + b.height/2}, {x:this.x, y:this.y})){
+								minBlock.distance = this.getDistancePoints({x:b.x + b.width/2, y:b.y + b.height/2}, {x:this.x, y:this.y});
+								minBlock.c = c;
+								minBlock.r = r;
+								if(pi == 0 || pi == 2)
+									this.dy = -this.dy;
+								if(pi == 1 || pi == 3)
+									this.dx = -this.dx;
+								//b.status = 0;
+								flag = true;
+							}
 						}
 					}
 				}
 			}
 		}
+
+		blocks[minBlock.c][minBlock.r].status = 0;
 		return flag;
 	}
 
 	paddleDetection(paddle) {
-		const points = paddle.getPoints();
-		if(points == null)
+		if(this.slowFlag){
+			if(this.judgeIentersected(paddle.sX, paddle.sY, paddle.eX, paddle.eY, this.x, this.y, this.x + this.dx * 20, this.y + this.dy * 20)) {
+				this.dy = -this.speed;
+			}
+		} else
+			if(this.judgeIentersected(paddle.sX, paddle.sY, paddle.eX, paddle.eY, this.x, this.y, this.x + this.dx, this.y + this.dy)) {
+				this.dy = -this.speed;
+			}
+
+		//const points = paddle.getPoints();
+		//if(points == null)
+		//	return false;
+		//for(let pi=0;pi<points.length;pi++) {
+		//	let pi2;
+		//	if(pi == 3)
+		//		pi2 = 0;
+		//	else
+		//		pi2 = pi+1;
+		//	if(this.checkPointAndCircle(points[pi])){
+		//		this.dy = -this.dy;
+		//	}
+		//	else if(this.getDistancePointAndLine(points[pi], points[pi2]) < this.r) {
+		//		this.dy = -this.dy;
+		//	//} else if(this.judgeIentersected(points[pi].x, points[pi].y, points[pi2].x, points[pi2].y, this.x, this.y, this.x + this.dx, this.y + this.dy)) {
+		//	} else if(this.judgeIentersected(paddle.sX, paddle.sY, paddle.eX, paddle.eY, this.x, this.y, this.x + this.dx, this.y + this.dy)) {
+
+		//		this.dy = -this.speed;
+		//	}
+		//}
+	}
+
+	slowCheck(paddle) {
+		if(this.canHeight - 180 > this.y) {
 			return false;
-		for(let pi=0;pi<points.length;pi++) {
-			let pi2;
-			if(pi == 3)
-				pi2 = 0;
-			else
-				pi2 = pi+1;
-			if(this.checkPointAndCircle(points[pi])){
-				this.dy = -this.dy;
-			}
-			else if(this.getDistancePointAndLine(points[pi], points[pi2]) < this.r) {
-				this.dy = -this.dy;
-			} else if(this.judgeIentersected(points[pi].x, points[pi].y, points[pi2].x, points[pi2].y, this.x, this.y, this.x + this.dx, this.y + this.dy)) {
-				this.dy = -this.dy;
-			}
 		}
+
+		if(this.dy < 0) {
+			return false;
+		}
+
+		if(paddle.checkPaddle() == false) {
+			return true;
+		}
+
+		if(this.judgeIentersected(paddle.sX, paddle.sY, paddle.eX, paddle.eY, this.x, this.y, this.x + this.dx * 10000, this.y + this.dy * 10000)) {
+				return false;
+		}
+
+		if(this.judgeIentersected(0, this.canHeight, this.canWidth, this.canHeight, this.x, this.y, this.x + this.dx*10000, this.y + this.dy*10000)) {
+			return true;
+		} else{
+			return false;
+		}
+
 	}
 
 	checkPointAndCircle(point) {

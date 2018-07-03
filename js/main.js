@@ -5,17 +5,15 @@ function mouseMoveHandler(e) {
 	}
 }
 
-
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
 
-stage = new Stage(19,5);
+stage = new Stage();
 paddle = new Paddle(canvas.width, canvas.height);
 score = new Score(10);
 lives = new Hp(3,canvas.width);
 ball = new Ball(canvas.width, canvas.height);
 
-count = 0;
 
 document.addEventListener("mousemove", mouseMoveHandler, false);
 
@@ -43,8 +41,10 @@ function draw() {
 	paddle.draw(ctx);
 	score.draw(ctx);
 
-	if(ball.move(stage.blocks, paddle, score) != true)
+	if(ball.move(stage.blocks, paddle, score) != true) {
 		lives.damage();
+		paddle.clear();
+	}
 	lives.draw(ctx);
 
 
@@ -53,12 +53,6 @@ function draw() {
 		document.location.reload();
 	}
 
-	if(count % 100 == 0) {
-		ball.switch_time();
-		count = 0;
-	}
-
-	count += 1;
 	requestAnimationFrame(draw);
 }
 

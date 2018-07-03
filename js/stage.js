@@ -1,17 +1,17 @@
 
 class Stage {
-	constructor(row, column) {
-		this.row = row;
-		this.column = column;
+	constructor() {
+		this.row = 22;
+		this.column = 8;
 		this.blockPadding = 1;
 		this.blockOffsetTop = 30;
-		this.blockOffsetLeft = 6;
+		this.blockOffsetLeft = 15;
 		this.blocks = [];
 
 		for(let c=0; c<this.column; c++) {
 			this.blocks[c] = [];
 			for(let r=0; r<this.row; r++) {
-				this.blocks[c][r] = { x: 0, y: 0 , status: 1, width:30, height:30};
+				this.blocks[c][r] = { x: 0, y: 0 , status: 1, width:25, height:25};
 			}
 		}
 	}
@@ -34,9 +34,6 @@ class Stage {
 			}
 		}
 	}
-
-
-
 
 
 	collisiondetection(ball) {

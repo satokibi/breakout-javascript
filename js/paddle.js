@@ -12,7 +12,7 @@ class Paddle {
 		this.eY = null; // 終点Ｅのy座標（スクリーン座標）
 		this.mouseX; // ドラッグされている位置のx座標
 		this.mouseY; // ドラッグされている位置のy座標
-		this.lineWidth = 15;
+		this.lineWidth = 10;
 	}
 
 	draw(ctx) {
@@ -27,6 +27,12 @@ class Paddle {
 		//		ctx.closePath();
 	}
 
+	checkPaddle() {
+		if (this.sX != null && this.sY != null && this.eX != null && this.eY != null)
+			return true;
+		 else
+			return false;
+	}
 
 	// マウス位置に点を描画する
 	drawTempPoint() {
@@ -103,11 +109,15 @@ class Paddle {
 	onmouseout(e) {
 		// 始点・終点が共に確定していなければ、一旦クリア
 		if (this.sX == null || this.sY == null || this.eX == null || this.eY == null) {
+			this.clear();
+		}
+	}
+
+	clear() {
 			this.sX = null;
 			this.sY = null;
 			this.eX = null;
 			this.eY = null;
-		}
 	}
 
 	getPoints() {
@@ -119,7 +129,9 @@ class Paddle {
 			let x2 = this.eX;
 			let y2 = this.eY;
 
-			if(this.sX > this.eX) {
+			if(this.sX < this.eX) {
+				if(this.sY < this.eY) {
+				}
 				x1 = this.eX;
 				y1 = this.eY;
 				x2 = this.sX;
