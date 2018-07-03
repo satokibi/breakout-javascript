@@ -214,9 +214,6 @@ class Paddle {
 			this.drawLine(this.sX, this.sY, this.eX, this.eY, '#000', 20);
 		}
 	}
-
-
-
 }
 
 class Stage {
@@ -315,9 +312,6 @@ function judgeIentersected(ax, ay, bx, by, cx, cy, dx, dy) {
   //return tc * td < 0 && ta * tb < 0;
   return tc * td <= 0 && ta * tb <= 0; // 端点を含む場合
 };
-
-
-
 
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
