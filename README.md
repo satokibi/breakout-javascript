@@ -1,2 +1,2 @@
 # breakout-javascript
-https://satokibi.github.io/breakout-javascript/
+https://yuucu.github.io/breakout-javascript/
